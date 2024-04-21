@@ -82,7 +82,7 @@ class MainActivity3 : ComponentActivity() {
         }
     }
 }
-data class Item(val id: Int, val name: String)
+data class Item(val id: Int, val amount: Float)
 
 @SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,6 +91,7 @@ fun Drawer() {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
 
     // Define a state to manage which fragment is being displayed
     var currentScreen by remember { mutableStateOf("Home") }
@@ -139,11 +140,22 @@ fun Drawer() {
                     Icon(imageVector = Icons.Default.Menu, contentDescription = "menu", tint = Color.White)
                 }
             }
+            var balance by remember { mutableStateOf(5463f) }
+            var income by remember { mutableStateOf(10000f) }
+            var expense by remember { mutableStateOf(4537f) }
             // Render different screens based on the current state
             when (currentScreen) {
                 "Home" -> {
-                    BalanceCard()
-                    Payment(itemsList = itemsList)
+                    BalanceCard(balance = balance, income = income, expense = expense)
+                    Payment(itemsList = itemsList, request = { amount ->
+                        // Update balance and income
+                        balance += amount
+                        income += amount
+                    },send = { amount ->
+                        // Update balance and income
+                        balance -= amount
+                        expense += amount
+                    })
                     Transactions(itemsList)
                 }
                 "Transactions" -> TransactionsFrag(itemsList)
@@ -157,7 +169,7 @@ fun Drawer() {
 
 
 @Composable
-fun BalanceCard() {
+fun BalanceCard(balance: Float, income: Float, expense: Float) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = st,
@@ -175,7 +187,7 @@ fun BalanceCard() {
             color = oranget
         )
             Text(
-            text = "₹767681672.43",
+            text = "₹$balance",
             modifier = Modifier
                 .padding(16.dp,5.dp),
             textAlign = TextAlign.Center,
@@ -195,7 +207,7 @@ fun BalanceCard() {
                     color = oranget
                 )
                 Text(
-                    text = "₹767131.43",
+                    text = "₹$income",
                     modifier = Modifier
                         .padding(16.dp,5.dp),
                     textAlign = TextAlign.Center,
@@ -212,7 +224,7 @@ fun BalanceCard() {
                     color = oranget
                 )
                 Text(
-                    text = "₹767131.43",
+                    text = "₹$expense",
                     modifier = Modifier
                         .padding(16.dp,5.dp),
                     textAlign = TextAlign.Center,
@@ -226,7 +238,7 @@ fun BalanceCard() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Payment(itemsList: MutableList<Item>){
+fun Payment(itemsList: MutableList<Item>, request: (Float) -> Unit, send: (Float) -> Unit) {
     var showSendDialog by remember { mutableStateOf(false) }
     var showRequestDialog by remember { mutableStateOf(false) }
 
@@ -242,7 +254,7 @@ fun Payment(itemsList: MutableList<Item>){
                     containerColor = st,
                 ),
             ) {
-                Text(text = "Enter the Amount ", color = Color.White, modifier = Modifier.padding(10.dp,0.dp))
+                Text(text = "Enter the Amount ", color = Color.White, modifier = Modifier.padding(10.dp, 0.dp))
                 var sendAmount by remember { mutableStateOf("") }
                 Box(
                     modifier = Modifier
@@ -256,14 +268,16 @@ fun Payment(itemsList: MutableList<Item>){
                 ) {
 
                     TextField(
-                        value = sendAmount, onValueChange = {
+                        value = sendAmount,
+                        onValueChange = {
                             sendAmount = it
-                        }, modifier = Modifier.padding(0.dp),
+                        },
+                        modifier = Modifier.padding(0.dp),
                         colors = TextFieldDefaults.textFieldColors(
                             containerColor = st,
                             unfocusedTextColor = Color.White,
                             focusedTextColor = oranget,
-                            focusedIndicatorColor = Color.Transparent, // Remove the focused indicator
+                            focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         )
                     )
@@ -273,8 +287,9 @@ fun Payment(itemsList: MutableList<Item>){
                     onClick = {
                         if (sendAmount.isNotEmpty()) {
                             val newId = (itemsList.maxByOrNull { it.id }?.id ?: 0) + 1
-                            itemsList.add(Item(newId, "₹ $sendAmount"))
+                            itemsList.add(Item(newId, sendAmount.toFloat()))
                             showSendDialog = false // Dismiss dialog
+                            send(sendAmount.toFloat())
                         }
                     }
                 ) {
@@ -297,7 +312,7 @@ fun Payment(itemsList: MutableList<Item>){
                     containerColor = st,
                 ),
             ) {
-                Text(text = "Enter the Amount ", color = Color.White,modifier = Modifier.padding(10.dp,0.dp))
+                Text(text = "Enter the Amount ", color = Color.White, modifier = Modifier.padding(10.dp, 0.dp))
                 var requestAmount by remember { mutableStateOf("") }
                 Box(
                     modifier = Modifier
@@ -307,18 +322,20 @@ fun Payment(itemsList: MutableList<Item>){
                             width = 1.dp,
                             color = oranget,
                             shape = CircleShape
-                        ) // Set the border color and width
+                        )
                 ) {
 
                     TextField(
-                        value = requestAmount, onValueChange = {
+                        value = requestAmount,
+                        onValueChange = {
                             requestAmount = it
-                        }, modifier = Modifier.padding(0.dp),
+                        },
+                        modifier = Modifier.padding(0.dp),
                         colors = TextFieldDefaults.textFieldColors(
                             containerColor = st,
                             unfocusedTextColor = Color.White,
                             focusedTextColor = oranget,
-                            focusedIndicatorColor = Color.Transparent, // Remove the focused indicator
+                            focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         )
                     )
@@ -327,7 +344,8 @@ fun Payment(itemsList: MutableList<Item>){
                     onClick = {
                         if (requestAmount.isNotEmpty()) {
                             val newId = (itemsList.maxByOrNull { it.id }?.id ?: 0) + 1
-                            itemsList.add(Item(newId, "₹ $requestAmount"))
+                            itemsList.add(Item(newId, requestAmount.toFloat()))
+                            request(requestAmount.toFloat())
                             showRequestDialog = false // Dismiss dialog
                         }
                     }
@@ -338,77 +356,80 @@ fun Payment(itemsList: MutableList<Item>){
             }
         }
     }
-    Row(modifier = Modifier
-        .fillMaxWidth(),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly) {
-        Button(onClick = { showSendDialog = true },
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Button(
+            onClick = { showSendDialog = true },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent, // Makes the button background transparent
-                contentColor = Color.Transparent // Ensures that the content (icons, text) does not change color
-            ) ) {
+                containerColor = Color.Transparent,
+                contentColor = Color.Transparent
+            )
+        ) {
             ElevatedCard(
-                colors = CardDefaults.cardColors(
-                    containerColor = st,
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 6.dp
-                ),
-                modifier = Modifier
-                    .size(width = 120.dp, height = 100.dp)
+                colors = CardDefaults.cardColors(containerColor = st),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                modifier = Modifier.size(width = 120.dp, height = 100.dp)
             ) {
-                Column(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(5.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Icons.Default.Send, contentDescription = "Send", tint = Color.Green)
-                Text(
-                    text = "Send",
-                    color = Color.White,
+                Column(
                     modifier = Modifier
-                        .padding(10.dp),
-                    textAlign = TextAlign.Center,
-                )
+                        .fillMaxSize()
+                        .padding(5.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = Color.Green
+                    )
+                    Text(
+                        text = "Send",
+                        color = Color.White,
+                        modifier = Modifier.padding(10.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
-        Button(onClick = { showRequestDialog = true },
+        Button(
+            onClick = { showRequestDialog = true },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent, // Makes the button background transparent
-                contentColor = Color.Transparent // Ensures that the content (icons, text) does not change color
-            ) // Removes padding inside the button
-             ) {
-        ElevatedCard(
-                colors = CardDefaults.cardColors(
-                    containerColor = st,
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 6.dp
-                ),
-                modifier = Modifier
-                    .size(width = 120.dp, height = 100.dp)
+                containerColor = Color.Transparent,
+                contentColor = Color.Transparent
+            )
+        ) {
+            ElevatedCard(
+                colors = CardDefaults.cardColors(containerColor = st),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                modifier = Modifier.size(width = 120.dp, height = 100.dp)
             ) {
-                Column(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(5.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Icons.Default.Notifications, contentDescription = "Request", tint = Color.Green)
-                Text(
-                    text = "Request",
-                    color = Color.White,
+                Column(
                     modifier = Modifier
-                        .padding(10.dp),
-                    textAlign = TextAlign.Center,
-                )
+                        .fillMaxSize()
+                        .padding(5.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Request",
+                        tint = Color.Green
+                    )
+                    Text(
+                        text = "Request",
+                        color = Color.White,
+                        modifier = Modifier.padding(10.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
-
-
     }
 }
+
 
 
 @Composable
@@ -440,7 +461,7 @@ fun Transactions(items: MutableList<Item>) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Icon(imageVector = Icons.Default.Send, contentDescription = "message", tint = Color.White)
-                    Text(text = item.name, modifier = Modifier.padding(16.dp), color = Color.White)
+                    Text(text = "₹${item.amount}", modifier = Modifier.padding(16.dp), color = Color.White)
                 }
             }
         }
@@ -477,7 +498,7 @@ fun TransactionsFrag(items: MutableList<Item>) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Icon(imageVector = Icons.Default.Send, contentDescription = "message", tint = Color.White)
-            Text(text = item.name, modifier = Modifier.padding(16.dp), color = Color.White)
+            Text(text = "₹${item.amount}", modifier = Modifier.padding(16.dp), color = Color.White)
         }
     }
         }
