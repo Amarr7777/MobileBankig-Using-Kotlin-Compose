@@ -11,7 +11,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -214,7 +216,25 @@ fun RegisterBtn(
     val intent = remember {
         Intent(context, MainActivity::class.java)
     }
+    Column(
+        Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
 
+    Row(modifier = Modifier.padding(10.dp)) {
+        Text(
+            text = "Already a member?",
+            color = Color.White
+        )
+        Box(modifier = Modifier
+            .clickable {context.startActivity(intent) }) {
+            Text(
+                text = " Login",
+                color = oranget
+            )
+        }
+    }
     Box(
         modifier = Modifier
             .padding(16.dp)
@@ -242,5 +262,6 @@ fun RegisterBtn(
             color = Color.White,
             modifier = Modifier.padding(16.dp)
         )
+    }
     }
 }

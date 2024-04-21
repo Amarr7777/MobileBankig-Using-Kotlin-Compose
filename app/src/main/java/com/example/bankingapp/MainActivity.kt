@@ -54,13 +54,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = pt
                 ) {
+                    var email by remember { mutableStateOf("") }
+                    var password by remember { mutableStateOf("") }
                     Column(modifier = Modifier
                         .background(pt)
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly) {
-                    Login()
-                        LoginBtn()
+                        Login(onEmailEntered ={newEmail -> email = newEmail} ,
+                            onPasswordEntered ={newPassword -> password = newPassword})
+                        LoginBtn(email = email, password = password)
                     }
                 }
             }
@@ -70,10 +73,13 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Login(){
+fun Login(
+    onEmailEntered: (String) -> Unit,
+    onPasswordEntered: (String) -> Unit,
+){
     Column() {
         Text(text = "Email", color = Color.White)
-        var email by remember { mutableStateOf("") }
+
         Box(
             modifier = Modifier
                 .padding(5.dp, 10.dp)
@@ -84,10 +90,11 @@ fun Login(){
                     shape = CircleShape
                 ) // Set the border color and width
         ) {
-
+            var email by remember { mutableStateOf("") }
             TextField(
                 value = email, onValueChange = {
                     email = it
+                    onEmailEntered(it)
 //                    onNameEntered(it) // Invoke the lambda with the updated name
                 }, modifier = Modifier.padding(0.dp),
                 colors = TextFieldDefaults.textFieldColors(
@@ -100,7 +107,6 @@ fun Login(){
             )
         }
         Text(text = "password", color = Color.White)
-        var password by remember { mutableStateOf("") }
         Box(
             modifier = Modifier
                 .padding(5.dp, 10.dp)
@@ -111,11 +117,11 @@ fun Login(){
                     shape = CircleShape
                 ) // Set the border color and width
         ) {
-
+            var password by remember { mutableStateOf("") }
             TextField(
                 value = password, onValueChange = {
                     password = it
-//                    onEmailEntered(it)
+                    onPasswordEntered(it)
                 }, modifier = Modifier.padding(0.dp),
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = pt,
@@ -129,15 +135,18 @@ fun Login(){
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginBtn(){
+fun LoginBtn(email:String,password:String) {
     val context = LocalContext.current
-    val intent = remember {
-        Intent(context,MainActivity2::class.java)
-    }
+    val dbHelper = MyDbHelper(context)
     val intent2 = remember {
-        Intent(context,MainActivity3::class.java)
+        Intent(context, MainActivity3::class.java)
     }
+    val intent = remember {
+        Intent(context, MainActivity2::class.java)
+    }
+
 
     Column(
         Modifier.fillMaxWidth(),
@@ -146,7 +155,7 @@ fun LoginBtn(){
     ) {
         Row(modifier = Modifier.padding(10.dp)) {
             Text(
-                text = "Not a member yet??",
+                text = "Not a member yet?",
                 color = Color.White
             )
             Box(modifier = Modifier
@@ -157,17 +166,21 @@ fun LoginBtn(){
                 )
             }
         }
+        // Login Button
         Box(
             modifier = Modifier
                 .clip(CircleShape)
                 .background(oranget)
                 .clickable {
-//                    if (isValidEmail && isBlankPassword){
+                    // Verify the email and password against the database
+                    val isValidUser = dbHelper.isValidUser(email, password)
+                    if (isValidUser) {
                         context.startActivity(intent2)
-//                    }else{
-//                        val errorText = "Invalid email or password"
-//                        Toast.makeText(context,errorText,Toast.LENGTH_LONG).show()
-//                    }
+                    } else {
+                        Toast
+                            .makeText(context, "Invalid email or password", Toast.LENGTH_LONG)
+                            .show()
+                    }
                 }
         ) {
             Text(
@@ -176,7 +189,6 @@ fun LoginBtn(){
             )
         }
     }
-
 }
 
 

@@ -29,6 +29,21 @@ class MyDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, nu
         db.close()
     }
 
+    fun isValidUser(email: String, password: String): Boolean {
+        val db = this.readableDatabase
+        val cursor = db.query(
+            TABLE_NAME,
+            null,
+            "$COL_EMAIL = ? AND $COL_PASSWORD = ?",
+            arrayOf(email, password),
+            null,
+            null,
+            null
+        )
+        val isValid = cursor.count > 0
+        cursor.close()
+        return isValid
+    }
 
 
     companion object {
